@@ -5,30 +5,42 @@ Distribute a set of n points on a sphere of radius r optimally
 
 import click
 import numpy as np
-from scipy.optimize import minimize
+from mpl_toolkits.mplot3d import Axes3D
+from scipy.optimize import minimize, basinhopping
 from scipy.spatial import ConvexHull
 import matplotlib.pyplot as plt
+
+plt.interactive(False)
+
+
+def distribute_and_plot(n):
+    solution = distribute_sphere(n)
+    plot_x(solution)
 
 
 def distribute_sphere(n, r=1):
     ic = construct_initial_sample(n-1)
     bounds = [(0, (((k - 1) % 2) + 1)*np.pi) for k in range(2*(n - 1))]
-    result = minimize(evaluate_objective, ic, bounds=bounds)
+    result = basinhopping(evaluate_objective, ic)
     solution = x_to_cartesian(result.x)
+
     return solution
 
 
-def plot_x(fig=None):
+def plot_x(x):
     fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
+    ax = Axes3D(fig)
 
     u = np.linspace(0, 2*np.pi, 100)
     v = np.linspace(0, np.pi, 100)
-    x = np.outer(np.cos(u), np.sin(v))
-    y = np.outer(np.sin(u), np.sin(v))
-    z = np.outer(np.ones(np.size(u)), np.cos(v))
+    sphere_x = np.outer(np.cos(u), np.sin(v))
+    sphere_y = np.outer(np.sin(u), np.sin(v))
+    sphere_z = np.outer(np.ones(np.size(u)), np.cos(v))
 
-    ax.plot_surface(x, y, z, color='b')
+    ax.plot_surface(sphere_x, sphere_y, sphere_z, color='b', alpha=0.2)
+    ax.plot_trisurf(x[:, 0], x[:, 1], x[:, 2])
+
+    plt.show()
 
 
 def construct_solution(x):
